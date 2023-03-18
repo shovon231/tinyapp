@@ -34,19 +34,17 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
   let randomStr = generateRandomString();
   urlDatabase[randomStr.trim()] = req.body.longURL;
   res.redirect("/urls/" + randomStr.trim());
 });
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id]; 
+  res.redirect("/urls/");
+});
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
-  // if (!req.params.id) {
-  //   res.redirect();
-  // } else {
-
-  // }
 });
 app.get("/urls/:id", (req, res) => {
   const templateVars = {
