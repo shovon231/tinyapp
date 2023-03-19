@@ -57,6 +57,11 @@ app.post("/urls/:id", (req, res) => {
   urlDatabase[req.params.id] = req.body[req.params.id];
   res.redirect("/urls");
 });
+app.post("/login", (req, res) => {
+  console.log(req.body.username);
+  res.cookie("usernsme", req.body.username);
+  res.redirect("/urls");
+});
 app.listen(PORT, () => {
   console.log(`Example app listening on ports ${PORT}!`);
 });
