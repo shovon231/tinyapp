@@ -19,6 +19,12 @@
       </div>
       <nav class="navbar bg-body-tertiary">
         <div class="container-fluid">
+          <div class="form-group mb-2">
+            <% if(username) {%>
+            <h4>Logged in as:<%= username %>!</h4>
+            <button type="submit" class="btn btn-primary">Logout</button>
+          </div>
+          <% } else {%>
           <form class="form-inline" action="/login" method="POST">
             <div class="form-group mb-2">
               <input
@@ -32,6 +38,7 @@
               <button type="submit" class="btn btn-primary">Login</button>
             </div>
           </form>
+          <% } %>
         </div>
       </nav>
     </div>
