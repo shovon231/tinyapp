@@ -27,7 +27,7 @@ const getUserByEmail = (inputObj, searchItem) => {
   for (const obj in inputObj) {
     for (const key in inputObj[obj]) {
       if (inputObj[obj][key] === searchItem) {
-        return obj;
+        return inputObj[obj];
       }
     }
   }
@@ -58,21 +58,21 @@ const users = {
 //Get routes
 
 app.get("/urls", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = req.cookies["user_id"];
   const urls = urlDatabase;
   const templateVars = { user, urls };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = req.cookies["user_id"];
   const urls = urlDatabase;
   const templateVars = { user, urls };
   res.render("urls_new", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = req.cookies["user_id"];
   const urls = urlDatabase;
   const templateVars = { user, urls };
   const longURL = urls[req.params.id];
@@ -80,7 +80,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = req.cookies["user_id"];
   const urls = urlDatabase;
   const longURL = urlDatabase[req.params.id];
   const id = req.params.id;
@@ -90,13 +90,13 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = req.cookies["user_id"];
   const templateVars = { user };
   res.render("urls_registration", templateVars);
 });
 
 app.get("/login", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = req.cookies["user_id"];
   const templateVars = { user };
   res.render("urls_login", templateVars);
 });
@@ -118,22 +118,15 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
-});
-
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.post("/register", (req, res) => {
   let id = generateRandomString().trim();
-  res.cookie("user_id", id);
   const email = req.body.email;
   const password = req.body.password;
-  console.log(email, password);
 
   if ((email === null && email === "") || (password === null && email === "")) {
     res.status(400);
@@ -143,7 +136,7 @@ app.post("/register", (req, res) => {
     res.send("This email alredy exists!! Try with another email.");
   } else {
     users[id] = { id, email, password };
-    console.log(users);
+    res.cookie("user_id", users[id]);
     res.redirect("/urls");
   }
 });
@@ -152,24 +145,20 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  if ((email = null && email === "") || (password = null && email === "")) {
-    res.status(400);
-    res.send("Email and password can not be blank!!");
-  } else if (getUserByEmail(users, email)) {
+  if (getUserByEmail(users, email)) {
     if (getUserByEmail(users, password)) {
-      console.log("success");
+      let user = getUserByEmail(users, email);
+      res.cookie("user_id", user);
+      res.redirect("/urls");
     }
+    res.status(403);
+    res.send("Password does not match,");
   }
+  res.status(403);
+  res.send("user with that e-mail cannot be found");
 });
 
 // Server up
 app.listen(PORT, () => {
   console.log(`Example app listening on ports ${PORT}!`);
 });
-
-// for (let id in users) {
-//   if (users[id].email === user.email) {
-//     if (users[id].password === user.password) {
-//     }
-//   }
-// }
