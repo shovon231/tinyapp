@@ -68,6 +68,9 @@ app.get("/urls/new", (req, res) => {
   const user = req.cookies["user_id"];
   const urls = urlDatabase;
   const templateVars = { user, urls };
+  if (!user) {
+    res.render("urls_login", templateVars);
+  }
   res.render("urls_new", templateVars);
 });
 
@@ -76,6 +79,12 @@ app.get("/u/:id", (req, res) => {
   const urls = urlDatabase;
   const templateVars = { user, urls };
   const longURL = urls[req.params.id];
+  const id = req.body.id;
+  // console.log(id);
+  if (!id) {
+    res.status(403);
+    res.send("Nothing to tell you!!");
+  }
   res.redirect(longURL);
 });
 
@@ -91,18 +100,31 @@ app.get("/urls/:id", (req, res) => {
 
 app.get("/register", (req, res) => {
   const user = req.cookies["user_id"];
-  const templateVars = { user };
-  res.render("urls_registration", templateVars);
+  const urls = urlDatabase;
+  const templateVars = { user, urls };
+  if (!user) {
+    res.render("urls_registration", templateVars);
+  }
+  res.render("urls_index", templateVars);
 });
 
 app.get("/login", (req, res) => {
   const user = req.cookies["user_id"];
-  const templateVars = { user };
-  res.render("urls_login", templateVars);
+  const urls = urlDatabase;
+  const templateVars = { user, urls };
+  if (!user) {
+    res.render("urls_login", templateVars);
+  }
+  res.render("urls_index", templateVars);
 });
 
 //Post routes
 app.post("/urls", (req, res) => {
+  const user = req.cookies["user_id"];
+  if (!user) {
+    res.status(403);
+    res.send("Please Login first/ register Yourself");
+  }
   let randomStr = generateRandomString();
   urlDatabase[randomStr.trim()] = req.body.longURL;
   res.redirect("/urls/" + randomStr.trim());
