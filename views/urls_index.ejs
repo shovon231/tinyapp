@@ -19,6 +19,9 @@
   <body>
     <header><%- include('partials/_header') %></header>
     <main style="margin: 1em">
+      <% if(!user){ %>
+      <h2>Please Login or Register</h2>
+      <% } else { %>
       <h3>My URLs</h3>
       <table class="table">
         <thead>
@@ -48,6 +51,7 @@
           <% } %>
         </tbody>
       </table>
+      <% } %>
     </main>
     <!-- Bootstrap JS -->
     <script
