@@ -1,7 +1,7 @@
 // Dependencies
 const express = require("express");
 const app = express();
-var methodOverride = require("method-override");
+const methodOverride = require("method-override");
 const PORT = 8080;
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
@@ -167,20 +167,24 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
+  let id = getUserByEmail(req.body.email, users);
+  
   const email = req.body.email;
   const password = req.body.password;
-  if (getUserByEmail(email, users)) {
-    const userID = getUserByEmail(email, users);
-    if (bcrypt.compareSync(password, userID.password)) {
-      let id = getUserByEmail(email, users).id;
-      req.session.user_id = { id, email, password };
+  if (!id) {
+      res.status(403)
+      res.send("user with that e-mail cannot be foundt ")
+  }
+    //const userID = getUserByEmail(email, users);
+  if (bcrypt.compareSync(password, users[id].password)) {
+      //let id = getUserByEmail(email, users);
+    req.session.user_id = { id, email, password };
+    console.log(req.session.user_id);
       res.redirect("/urls");
     }
     res.status(403);
     res.send("Password does not match,");
-  }
-  res.status(403);
-  res.send("user with that e-mail cannot be found");
+  
 });
 
 // Server up
