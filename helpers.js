@@ -38,5 +38,17 @@ const urlsForUser = (urlDatabase, id) => {
   return userURL;
 };
 
-module.exports = { getUserByEmail, generateRandomString, urlsForUser };
+function redirect() {
+  setTimeout(res.redirect("/login"), 5000);
+  res.status(403);
+  res.send("Please Login first/ register Yourself");
+  // var result = document.getElementById("result");
+  // result.innerHTML = "<b> The page will redirect after delay of 5 seconds";
+}
 
+module.exports = {
+  getUserByEmail,
+  generateRandomString,
+  urlsForUser,
+  redirect,
+};
