@@ -1,8 +1,4 @@
 // Dependencies
-/*
-
-*/
-
 const express = require("express");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
@@ -36,9 +32,7 @@ const { urlDatabase, users } = require("./database");
 
 app.get("/urls", (req, res) => {
   if (!req.session.user_id) {
-    setTimeout(res.redirect("/login"), 5000);
-    res.status(403);
-    res.send("Please Login first/ register Yourself");
+    res.status(403).redirect("/login");
   } else {
     const user = req.session.user_id;
     const userID = user.id;
@@ -51,8 +45,7 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   //console.log(req.session.user_id);
   if (!req.session.user_id) {
-    res.status(403);
-    res.send("Please Login first/ register Yourself");
+    res.status(403).redirect("/login");
   } else {
     const user = req.session.user_id;
     const urls = urlDatabase;
@@ -62,7 +55,10 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  if (!req.session.user_id) {
+  let shortURL = urlDatabase[req.params.id]; //define the short url
+  if (!shortURL) {
+    return res.status(404).send(`Short URL is invalid.`);
+  } else if (!req.session.user_id) {
     res.status(403);
     res.send("Nothing to tell you!!");
   } else {
@@ -73,26 +69,41 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
+  let shortURL = urlDatabase[req.params.id]; //define the short url
+  let userData; //user ID to send to urls_show
+  //checks if the short URL is valid or not
+  const user = req.session.user_id; //data as cookie
+  const urls = urlDatabase[req.params.id]; //
+  const longURL = urls.longURL;
+  if (!shortURL) {
+    return res.status(404).send(`Short URL is invalid.`);
+  }
+  //checks if the user logged in or not
   if (!req.session.user_id) {
-    res.status(403);
-    res.send("Please Login first/ register Yourself");
+    res.status(403).send("Please Login first/ register Yourself");
   } else {
-    const user = req.session.user_id;
-    const urls = urlDatabase[req.params.id];
-    const longURL = urls.longURL;
-    const id = req.params.id;
-    const templateVars = { user, urls, longURL, id };
+    //user looged in
+    let userURLID = urlDatabase[req.params.id].userID; //find the user id form the DB
+    const id = req.params.id; //the user id from looged user
+    let userData; //user value
+    if (user.id === userURLID) {
+      userData = user.id;
+    } else {
+      userData = null;
+    }
+    const templateVars = { user, urls, longURL, id, userData };
     res.render("urls_show", templateVars);
   }
 });
+
 app.get("/register", (req, res) => {
   const user = req.session.user_id;
   const urls = urlDatabase;
   const templateVars = { user, urls };
   if (!user) {
-    res.render("urls_registration", templateVars);
+    return res.render("urls_registration", templateVars);
   }
-  res.render("urls_index", templateVars);
+  res.redirect("/urls");
 });
 
 app.get("/login", (req, res) => {
@@ -100,10 +111,9 @@ app.get("/login", (req, res) => {
   const urls = urlDatabase;
   const templateVars = { user, urls };
   if (!user) {
-    res.render("urls_login", templateVars);
+    return res.render("urls_login", templateVars);
   }
-  console.log("4getlogin", users);
-  res.render("urls_index", templateVars);
+  res.redirect("/urls");
 });
 
 //Post routes
@@ -123,23 +133,29 @@ app.post("/urls", (req, res) => {
 });
 
 app.delete("/urls/:id", (req, res) => {
+  const user = req.session.user_id;
+  let dbID = urlDatabase[req.params.id];
   if (!req.session.user_id) {
-    res.status(403);
-    res.send("Please Login first/ register Yourself");
-  } else {
-    const user = req.session.user_id;
-    delete urlDatabase[req.params.id];
-    res.redirect("/urls/");
+    return res.status(403).send("Please Login first/ register Yourself");
   }
+  if (user.id !== dbID.userID) {
+    return res.status(400).send(" The user does not own the URL");
+  }
+  delete urlDatabase[req.params.id];
+  res.redirect("/urls/");
 });
 
 app.post("/urls/:id", (req, res) => {
   if (!req.session.user_id) {
-    res.status(403);
-    res.send("Please Login first/ register Yourself");
+    return res.status(403).send("Please Login first/ register Yourself");
   }
   const user = req.session.user_id;
+
   let dbID = urlDatabase[req.params.id];
+  console.log(user, dbID);
+  if (user.id !== dbID.userID) {
+    return res.status(400).send(" The user does not own the URL");
+  }
   dbID.longURL = req.body[req.params.id];
   res.redirect("/urls");
 });
@@ -154,19 +170,12 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const inputtedPassword = req.body.password;
   const password = bcrypt.hashSync(inputtedPassword, 10);
-  console.log(email);
-  console.log(getUserByEmail(email, users));
-  console.log(users);
   if (!email || !inputtedPassword) {
-    console.log("1");
-    res.status(400);
-    res.send("Email and password can not be blank!!");
+    res.status(400).send("Email and password can not be blank!!");
   } else if (getUserByEmail(email, users)) {
-    console.log("2");
     res.status(400);
     res.send("This email alredy exists!! Try with another email.");
   } else {
-    console.log("3");
     users[id] = { id, email, password };
     req.session.user_id = users[id];
     res.redirect("/urls");
@@ -175,19 +184,15 @@ app.post("/register", (req, res) => {
 
 app.post("/login", (req, res) => {
   let id = getUserByEmail(req.body.email, users);
-  console.log(users);
-  console.log(id);
+  // console.log(users);
+  // console.log(id);
   const email = req.body.email;
   const password = req.body.password;
   if (!id) {
-    res.status(403);
-    res.send("user with that e-mail cannot be found");
+    res.status(403).send("user with that e-mail cannot be found");
   }
-  //const userID = getUserByEmail(email, users);
   if (bcrypt.compareSync(password, users[id].password)) {
-    //let id = getUserByEmail(email, users);
     req.session.user_id = { id, email, password };
-    console.log(req.session.user_id);
     res.redirect("/urls");
   }
   res.status(403);
